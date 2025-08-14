@@ -33,7 +33,7 @@ urlpatterns = [
     path('cache/clear/', views.clear_cache, name='clear-cache'),
     
     # System health
-    path('health/', views.get_system_health, name='system-health'),
+    path('health/', views.system_health, name='system-health'),
     
     # Background tasks
     path('scheduler/start/', views.start_background_refresh, name='start-scheduler'),

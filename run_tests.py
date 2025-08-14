@@ -48,11 +48,12 @@ def run_integration_tests():
     test_files = [
         'test_auth.py',
         'test_api.py', 
-        'test_comprehensive.py',
+        'comprehensive_test.py',
         'test_city_management.py',
         'test_validation.py',
         'test_cache_direct.py',
-        'test_fallback_direct.py'
+        'test_fallback_direct.py',
+        'test_caching.py'
     ]
     
     passed = 0

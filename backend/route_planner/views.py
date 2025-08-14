@@ -9,8 +9,7 @@ from .serializers import (
 from django.conf import settings
 import requests
 import math
-from datetime import datetime, timedelta
-import pytz
+from datetime import datetime, timedelta, timezone
 
 
 def calculate_distance(lat1, lon1, lat2, lon2):

@@ -156,7 +156,7 @@ class WeatherDataValidator:
         
         if condition not in cls.VALID_CONDITIONS:
             # Allow it but log a warning
-            pass
+            return condition.capitalize()
         
         return condition.title()
     
