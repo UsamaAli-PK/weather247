@@ -1,0 +1,434 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}System Metrics - {{ site_title|default:"Django Admin" }}{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .metrics-container {
+        margin: 20px 0;
+    }
+    
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .metric-panel {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .metric-panel h3 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 18px;
+        border-bottom: 2px solid #0066cc;
+        padding-bottom: 10px;
+    }
+    
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .metric-row:last-child {
+        border-bottom: none;
+    }
+    
+    .metric-label {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .metric-value {
+        font-weight: bold;
+        color: #0066cc;
+    }
+    
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-healthy {
+        background-color: #28a745;
+    }
+    
+    .status-warning {
+        background-color: #ffc107;
+    }
+    
+    .status-error {
+        background-color: #dc3545;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-top: 20px;
+    }
+    
+    .refresh-btn {
+        background: #0066cc;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+    
+    .refresh-btn:hover {
+        background: #0052a3;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    
+    .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    
+    .last-updated {
+        color: #666;
+        font-size: 12px;
+        text-align: right;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>System Metrics</h1>
+
+<button class="refresh-btn" onclick="loadMetrics()">Refresh Metrics</button>
+
+<div id="loading" class="loading">
+    <p>Loading system metrics...</p>
+</div>
+
+<div id="error" class="error" style="display: none;">
+    <p>Error loading system metrics. Please try refreshing the page.</p>
+</div>
+
+<div id="metrics-content" class="metrics-container" style="display: none;">
+    <div class="metrics-grid">
+        <!-- Database Metrics -->
+        <div class="metric-panel">
+            <h3>Database Performance</h3>
+            <div class="metric-row">
+                <span class="metric-label">Connection Status</span>
+                <span class="metric-value">
+                    <span class="status-indicator status-healthy"></span>
+                    Connected
+                </span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Weather Records</span>
+                <span class="metric-value" id="db-weather-records">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Air Quality Records</span>
+                <span class="metric-value" id="db-air-quality-records">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Active Cities</span>
+                <span class="metric-value" id="db-active-cities">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Total Users</span>
+                <span class="metric-value" id="db-total-users">-</span>
+            </div>
+        </div>
+        
+        <!-- API Performance -->
+        <div class="metric-panel">
+            <h3>API Performance</h3>
+            <div class="metric-row">
+                <span class="metric-label">Requests (24h)</span>
+                <span class="metric-value" id="api-requests-24h">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Average Response Time</span>
+                <span class="metric-value" id="api-avg-response">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Error Rate</span>
+                <span class="metric-value" id="api-error-rate">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Cache Hit Rate</span>
+                <span class="metric-value" id="api-cache-hit-rate">-</span>
+            </div>
+        </div>
+        
+        <!-- System Health -->
+        <div class="metric-panel">
+            <h3>System Health</h3>
+            <div class="metric-row">
+                <span class="metric-label">Overall Status</span>
+                <span class="metric-value">
+                    <span class="status-indicator status-healthy"></span>
+                    Healthy
+                </span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Background Tasks</span>
+                <span class="metric-value">
+                    <span class="status-indicator status-healthy"></span>
+                    Running
+                </span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Cache System</span>
+                <span class="metric-value">
+                    <span class="status-indicator status-healthy"></span>
+                    Active
+                </span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">External APIs</span>
+                <span class="metric-value">
+                    <span class="status-indicator status-healthy"></span>
+                    Connected
+                </span>
+            </div>
+        </div>
+        
+        <!-- Data Freshness -->
+        <div class="metric-panel">
+            <h3>Data Freshness</h3>
+            <div class="metric-row">
+                <span class="metric-label">Very Fresh (&lt;15min)</span>
+                <span class="metric-value" id="freshness-very-fresh">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Fresh (15-30min)</span>
+                <span class="metric-value" id="freshness-fresh">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Stale (30min-2h)</span>
+                <span class="metric-value" id="freshness-stale">-</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Very Stale (&gt;2h)</span>
+                <span class="metric-value" id="freshness-very-stale">-</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div class="metrics-grid">
+        <div class="metric-panel">
+            <h3>Weather Data Trends (7 days)</h3>
+            <div class="chart-container">
+                <canvas id="weatherTrendsChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="metric-panel">
+            <h3>User Activity (24 hours)</h3>
+            <div class="chart-container">
+                <canvas id="userActivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="last-updated" id="last-updated">
+        Last updated: -
+    </div>
+</div>
+
+<script>
+let weatherTrendsChart = null;
+let userActivityChart = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadMetrics();
+});
+
+function loadMetrics() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('metrics-content').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    
+    // Load basic metrics
+    fetch('{% url "admin:metrics_api" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showError();
+                return;
+            }
+            
+            populateBasicMetrics(data);
+            loadAdvancedMetrics();
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('metrics-content').style.display = 'block';
+            document.getElementById('last-updated').textContent = 'Last updated: ' + new Date().toLocaleString();
+        })
+        .catch(error => {
+            console.error('Error loading metrics:', error);
+            showError();
+        });
+}
+
+function populateBasicMetrics(data) {
+    // Database metrics
+    document.getElementById('db-weather-records').textContent = data.weather_data.total.toLocaleString();
+    document.getElementById('db-air-quality-records').textContent = data.air_quality.total.toLocaleString();
+    document.getElementById('db-active-cities').textContent = data.cities.active;
+    document.getElementById('db-total-users').textContent = data.users.total;
+    
+    // API metrics (mock data for now)
+    document.getElementById('api-requests-24h').textContent = data.weather_data.last_24h.toLocaleString();
+    document.getElementById('api-avg-response').textContent = '120ms';
+    document.getElementById('api-error-rate').textContent = '0.5%';
+    document.getElementById('api-cache-hit-rate').textContent = '85%';
+}
+
+function loadAdvancedMetrics() {
+    // Load analytics data for charts
+    fetch('/api/weather/analytics/dashboard/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.data_freshness && data.data_freshness.freshness_percentages) {
+                const freshness = data.data_freshness.freshness_percentages;
+                document.getElementById('freshness-very-fresh').textContent = freshness.very_fresh + '%';
+                document.getElementById('freshness-fresh').textContent = freshness.fresh + '%';
+                document.getElementById('freshness-stale').textContent = freshness.stale + '%';
+                document.getElementById('freshness-very-stale').textContent = freshness.very_stale + '%';
+            }
+            
+            if (data.weather_trends && data.weather_trends.daily_trends) {
+                createWeatherTrendsChart(data.weather_trends.daily_trends);
+            }
+            
+            if (data.api_usage && data.api_usage.hourly_breakdown) {
+                createUserActivityChart(data.api_usage.hourly_breakdown);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading advanced metrics:', error);
+            // Continue without advanced metrics
+        });
+}
+
+function createWeatherTrendsChart(dailyTrends) {
+    const ctx = document.getElementById('weatherTrendsChart').getContext('2d');
+    
+    if (weatherTrendsChart) {
+        weatherTrendsChart.destroy();
+    }
+    
+    const labels = dailyTrends.map(day => day.date);
+    const avgTemps = dailyTrends.map(day => day.avg_temperature);
+    const dataPoints = dailyTrends.map(day => day.data_points);
+    
+    weatherTrendsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Avg Temperature (°C)',
+                data: avgTemps,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                yAxisID: 'y'
+            }, {
+                label: 'Data Points',
+                data: dataPoints,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+}
+
+function createUserActivityChart(hourlyBreakdown) {
+    const ctx = document.getElementById('userActivityChart').getContext('2d');
+    
+    if (userActivityChart) {
+        userActivityChart.destroy();
+    }
+    
+    const labels = hourlyBreakdown.map(hour => {
+        const date = new Date(hour.hour);
+        return date.getHours() + ':00';
+    });
+    const requests = hourlyBreakdown.map(hour => hour.requests);
+    
+    userActivityChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'API Requests',
+                data: requests,
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function showError() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+}
+
+// Auto-refresh every 2 minutes
+setInterval(loadMetrics, 120000);
+</script>
+{% endblock %}

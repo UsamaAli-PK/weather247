@@ -1,0 +1,429 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}API Cost Analysis - {{ site_title|default:"Django Admin" }}{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .cost-dashboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .cost-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .cost-card h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #417690;
+        padding-bottom: 10px;
+    }
+    
+    .cost-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .cost-metric {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .cost-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .cost-label {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    
+    .provider-costs {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .provider-cost-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        background: #f8f9fa;
+        border-radius: 4px;
+        border-left: 4px solid #417690;
+    }
+    
+    .cost-amount {
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .period-selector {
+        margin: 20px 0;
+        text-align: center;
+    }
+    
+    .period-btn {
+        background: #417690;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        margin: 0 5px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .period-btn.active {
+        background: #2e5266;
+    }
+    
+    .period-btn:hover {
+        background: #2e5266;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+    
+    .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+    }
+    
+    .export-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 10px 0;
+    }
+    
+    .export-btn:hover {
+        background: #218838;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>API Cost Analysis</h1>
+
+<div class="period-selector">
+    <button class="period-btn active" onclick="changePeriod(7, this)">7 Days</button>
+    <button class="period-btn" onclick="changePeriod(30, this)">30 Days</button>
+    <button class="period-btn" onclick="changePeriod(90, this)">90 Days</button>
+    <button class="export-btn" onclick="exportCostData()">Export Data</button>
+</div>
+
+<div class="loading" id="loading">Loading cost analysis...</div>
+<div class="error" id="error" style="display: none;"></div>
+
+<div id="cost-content" style="display: none;">
+    <!-- Cost Summary -->
+    <div class="cost-summary" id="cost-summary">
+        <!-- Metrics will be populated by JavaScript -->
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="cost-dashboard">
+        <!-- Provider Costs -->
+        <div class="cost-card">
+            <h3>Cost by Provider</h3>
+            <ul class="provider-costs" id="provider-costs">
+                <!-- Provider costs will be populated by JavaScript -->
+            </ul>
+        </div>
+
+        <!-- Cost Pie Chart -->
+        <div class="cost-card">
+            <h3>Cost Distribution</h3>
+            <div class="chart-container">
+                <canvas id="costPieChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Daily Cost Trend -->
+        <div class="cost-card">
+            <h3>Daily Cost Trends</h3>
+            <div class="chart-container">
+                <canvas id="dailyCostChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Request vs Cost Analysis -->
+        <div class="cost-card">
+            <h3>Requests vs Cost</h3>
+            <div class="chart-container">
+                <canvas id="requestCostChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPeriod = 30;
+let currentData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCostAnalysis();
+});
+
+async function loadCostAnalysis() {
+    try {
+        showLoading();
+        const response = await fetch(`{% url "admin:cost_analysis_api" %}?days=${currentPeriod}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+            return;
+        }
+        
+        currentData = data;
+        hideLoading();
+        renderCostSummary(data.totals);
+        renderProviderCosts(data.provider_breakdown);
+        renderCharts(data);
+        
+    } catch (error) {
+        showError('Failed to load cost analysis: ' + error.message);
+    }
+}
+
+function renderCostSummary(totals) {
+    const container = document.getElementById('cost-summary');
+    container.innerHTML = `
+        <div class="cost-metric">
+            <div class="cost-value">$${totals.total_cost.toFixed(4)}</div>
+            <div class="cost-label">Total Cost</div>
+        </div>
+        <div class="cost-metric">
+            <div class="cost-value">${totals.total_requests.toLocaleString()}</div>
+            <div class="cost-label">Total Requests</div>
+        </div>
+        <div class="cost-metric">
+            <div class="cost-value">$${totals.avg_cost_per_request.toFixed(6)}</div>
+            <div class="cost-label">Avg Cost/Request</div>
+        </div>
+        <div class="cost-metric">
+            <div class="cost-value">$${(totals.total_cost * 30 / currentPeriod).toFixed(2)}</div>
+            <div class="cost-label">Projected Monthly</div>
+        </div>
+    `;
+}
+
+function renderProviderCosts(providers) {
+    const container = document.getElementById('provider-costs');
+    container.innerHTML = providers.map(provider => `
+        <li class="provider-cost-item">
+            <div>
+                <strong>${provider.display_name}</strong>
+                <br>
+                <small>${provider.requests.toLocaleString()} requests</small>
+            </div>
+            <div class="cost-amount">
+                $${provider.cost.toFixed(4)}
+            </div>
+        </li>
+    `).join('');
+}
+
+function renderCharts(data) {
+    // Cost Distribution Pie Chart
+    const pieCtx = document.getElementById('costPieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: data.provider_breakdown.map(p => p.display_name),
+            datasets: [{
+                data: data.provider_breakdown.map(p => p.cost),
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': $' + context.parsed.toFixed(4);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Daily Cost Trend
+    const dailyCtx = document.getElementById('dailyCostChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: data.daily_costs.map(d => d.date),
+            datasets: [{
+                label: 'Daily Cost',
+                data: data.daily_costs.map(d => d.cost),
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cost ($)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(4);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Request vs Cost Scatter
+    const scatterCtx = document.getElementById('requestCostChart').getContext('2d');
+    new Chart(scatterCtx, {
+        type: 'scatter',
+        data: {
+            datasets: data.provider_breakdown.map((provider, index) => ({
+                label: provider.display_name,
+                data: [{
+                    x: provider.requests,
+                    y: provider.cost
+                }],
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                ][index % 8]
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Requests'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Cost ($)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(4);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function changePeriod(days, button) {
+    // Update active button
+    document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    
+    currentPeriod = days;
+    loadCostAnalysis();
+}
+
+function exportCostData() {
+    if (!currentData) {
+        alert('No data to export');
+        return;
+    }
+    
+    // Create CSV content
+    let csv = 'Provider,Requests,Cost,Avg Cost per Request\n';
+    currentData.provider_breakdown.forEach(provider => {
+        csv += `${provider.display_name},${provider.requests},${provider.cost},${provider.avg_cost_per_request}\n`;
+    });
+    
+    csv += '\nDaily Costs\n';
+    csv += 'Date,Cost,Requests\n';
+    currentData.daily_costs.forEach(day => {
+        csv += `${day.date},${day.cost},${day.requests}\n`;
+    });
+    
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `api_cost_analysis_${currentPeriod}days.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function showLoading() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('cost-content').style.display = 'none';
+}
+
+function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'none';
+    document.getElementById('cost-content').style.display = 'block';
+}
+
+function showError(message) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('error').textContent = message;
+    document.getElementById('cost-content').style.display = 'none';
+}
+</script>
+{% endblock %}

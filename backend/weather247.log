@@ -1,0 +1,16 @@
+ERROR 2025-08-14 22:57:15,444 api_monitoring_realtime 9892 11340 Error checking costs for test_provider: You cannot call this from an async context - use a thread or sync_to_async.
+ERROR 2025-08-14 22:57:15,733 api_monitoring_realtime 9892 12096 Error checking performance for test_provider: You cannot call this from an async context - use a thread or sync_to_async.
+ERROR 2025-08-14 22:57:15,745 api_monitoring_realtime 9892 11516 Error creating alert: You cannot call this from an async context - use a thread or sync_to_async.
+ERROR 2025-08-14 22:57:15,756 api_monitoring_realtime 9892 9916 Error creating alert: You cannot call this from an async context - use a thread or sync_to_async.
+ERROR 2025-08-14 22:57:15,758 api_monitoring_realtime 9892 9916 Error creating alert: You cannot call this from an async context - use a thread or sync_to_async.
+ERROR 2025-08-14 22:57:15,927 api_monitoring_realtime 9892 5852 Error getting real-time status: no such table: system_alerts
+ERROR 2025-08-15 00:41:32,192 log 10396 11440 Internal Server Error: /api/weather/monitoring/alerts/1/acknowledge/
+INFO 2025-08-15 00:41:35,380 system_monitoring_core 10396 11440 Cleaned up 0 old metrics, 0 old health checks, 0 old alerts
+WARNING 2025-08-15 00:41:38,804 system_monitoring_core 10396 11440 Created system alert: High Disk Usage
+INFO 2025-08-15 00:41:39,888 system_monitoring_core 10396 11440 Cleaned up 1 old metrics, 0 old health checks, 0 old alerts
+WARNING 2025-08-15 00:41:46,212 system_monitoring_core 10396 11440 Created system alert: Test Alert
+WARNING 2025-08-15 00:41:54,954 middleware 10396 11440 Slow request: GET /api/weather/monitoring/health/ took 6.02s
+WARNING 2025-08-15 00:41:59,309 middleware 10396 11440 Slow request: GET /api/weather/monitoring/real-time/ took 1.01s
+WARNING 2025-08-15 00:42:03,490 middleware 10396 11440 Slow request: GET /api/weather/monitoring/status/ took 1.01s
+WARNING 2025-08-15 00:42:07,078 log 10396 11440 Forbidden: /api/weather/monitoring/status/
+WARNING 2025-08-15 00:42:07,083 log 10396 11440 Forbidden: /api/weather/monitoring/alerts/

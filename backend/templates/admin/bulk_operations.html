@@ -1,0 +1,327 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Bulk User Operations - {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+<style>
+    .bulk-operations-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .operation-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .operation-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .operation-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-activate {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .btn-deactivate {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .btn-verify {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .btn-export {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .user-table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    
+    .user-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+    }
+    
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .status-verified {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .status-unverified {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .select-all-container {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+    }
+    
+    .selected-count {
+        font-weight: bold;
+        color: #007bff;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bulk-operations-container">
+    <h1>Bulk User Operations</h1>
+    
+    <form method="post" id="bulkOperationForm">
+        {% csrf_token %}
+        
+        <div class="operation-panel">
+            <h3>Select Operation</h3>
+            <div class="operation-buttons">
+                <button type="button" class="operation-btn btn-activate" onclick="setOperation('activate')">
+                    Activate Users
+                </button>
+                <button type="button" class="operation-btn btn-deactivate" onclick="setOperation('deactivate')">
+                    Deactivate Users
+                </button>
+                <button type="button" class="operation-btn btn-verify" onclick="setOperation('verify')">
+                    Verify Users
+                </button>
+                <button type="button" class="operation-btn btn-export" onclick="exportSelected()">
+                    Export Selected
+                </button>
+            </div>
+            
+            <input type="hidden" name="operation" id="operationInput">
+            
+            <div class="select-all-container">
+                <label>
+                    <input type="checkbox" id="selectAll" onchange="toggleAllUsers()">
+                    Select All Users
+                </label>
+                <span class="selected-count" id="selectedCount">0 users selected</span>
+            </div>
+        </div>
+        
+        <div class="operation-panel">
+            <h3>User List</h3>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>Select</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Verified</th>
+                        <th>Staff</th>
+                        <th>Date Joined</th>
+                        <th>Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="user_ids" value="{{ user.id }}" 
+                                   class="user-checkbox" onchange="updateSelectedCount()">
+                        </td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.get_full_name|default:"-" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="status-badge status-active">Active</span>
+                            {% else %}
+                                <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_verified %}
+                                <span class="status-badge status-verified">Verified</span>
+                            {% else %}
+                                <span class="status-badge status-unverified">Unverified</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.is_staff|yesno:"Yes,No" }}</td>
+                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                        <td>
+                            {% if user.last_activity %}
+                                {{ user.last_activity|timesince }} ago
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button type="submit" class="button" id="executeButton" disabled>
+                Execute Operation
+            </button>
+            <a href="{% url 'admin:accounts_user_changelist' %}" class="button">
+                Back to User List
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+let selectedOperation = '';
+
+function setOperation(operation) {
+    selectedOperation = operation;
+    document.getElementById('operationInput').value = operation;
+    
+    // Update button styles
+    document.querySelectorAll('.operation-btn').forEach(btn => {
+        btn.style.opacity = '0.6';
+    });
+    
+    const selectedBtn = document.querySelector(`.btn-${operation}`);
+    if (selectedBtn) {
+        selectedBtn.style.opacity = '1';
+    }
+    
+    updateExecuteButton();
+}
+
+function toggleAllUsers() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+    const count = checkboxes.length;
+    
+    document.getElementById('selectedCount').textContent = `${count} users selected`;
+    updateExecuteButton();
+}
+
+function updateExecuteButton() {
+    const selectedUsers = document.querySelectorAll('.user-checkbox:checked').length;
+    const executeButton = document.getElementById('executeButton');
+    
+    if (selectedUsers > 0 && selectedOperation) {
+        executeButton.disabled = false;
+        executeButton.textContent = `Execute ${selectedOperation.charAt(0).toUpperCase() + selectedOperation.slice(1)} on ${selectedUsers} users`;
+    } else {
+        executeButton.disabled = true;
+        executeButton.textContent = 'Execute Operation';
+    }
+}
+
+function exportSelected() {
+    const selectedUsers = document.querySelectorAll('.user-checkbox:checked');
+    if (selectedUsers.length === 0) {
+        alert('Please select users to export.');
+        return;
+    }
+    
+    // Create a form for export
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = '{% url "admin:accounts_user_changelist" %}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+    
+    // Add action
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'export_users_csv';
+    form.appendChild(actionInput);
+    
+    // Add selected user IDs
+    selectedUsers.forEach(checkbox => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = '_selected_action';
+        input.value = checkbox.value;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+
+// Confirm before executing operations
+document.getElementById('bulkOperationForm').addEventListener('submit', function(e) {
+    const selectedUsers = document.querySelectorAll('.user-checkbox:checked').length;
+    const operation = selectedOperation;
+    
+    if (!confirm(`Are you sure you want to ${operation} ${selectedUsers} users? This action cannot be undone.`)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

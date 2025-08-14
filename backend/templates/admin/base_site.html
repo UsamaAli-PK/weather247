@@ -1,0 +1,235 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Weather247 Admin" }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        <img src="{% static 'admin/img/weather247-logo.png' %}" alt="Weather247"
+            style="height: 32px; margin-right: 10px; vertical-align: middle;" onerror="this.style.display='none'">
+        Weather247 Administration
+    </a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}
+<div id="nav-global">
+    <a href="{% url 'admin:dashboard' %}" class="nav-link">Dashboard</a>
+    <a href="{% url 'admin:system_metrics' %}" class="nav-link">System Metrics</a>
+    <a href="{% url 'admin:api_management' %}" class="nav-link">API Management</a>
+    <a href="{% url 'admin:cost_analysis' %}" class="nav-link">Cost Analysis</a>
+    <a href="/api/weather/analytics/dashboard/" target="_blank" class="nav-link">Analytics API</a>
+    <a href="/api/weather/monitoring/health/" target="_blank" class="nav-link">Health Check</a>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    /* Custom admin styling */
+    #header {
+        background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+        border-bottom: 3px solid #003366;
+    }
+
+    #branding h1 {
+        color: white;
+        font-weight: 300;
+    }
+
+    #branding h1 a:link,
+    #branding h1 a:visited {
+        color: white;
+        text-decoration: none;
+    }
+
+    #nav-global {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px 20px;
+        margin-top: 10px;
+    }
+
+    #nav-global .nav-link {
+        color: white;
+        text-decoration: none;
+        margin-right: 20px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background-color 0.3s;
+    }
+
+    #nav-global .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Dashboard specific styling */
+    .dashboard .module {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dashboard .module h2 {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 2px solid #0066cc;
+        border-radius: 8px 8px 0 0;
+    }
+
+    /* Form styling improvements */
+    .form-row {
+        margin-bottom: 15px;
+    }
+
+    .form-row .field-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    /* Table improvements */
+    #result_list {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #result_list th {
+        background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+        color: white;
+        font-weight: 500;
+    }
+
+    #result_list tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+
+    /* Button improvements */
+    .default,
+    input[type=submit].default,
+    .submit-row input.default {
+        background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .default:hover,
+    input[type=submit].default:hover,
+    .submit-row input.default:hover {
+        background: linear-gradient(135deg, #004499 0%, #003366 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px 20px;
+    }
+
+    .breadcrumbs a {
+        color: #0066cc;
+        text-decoration: none;
+    }
+
+    .breadcrumbs a:hover {
+        text-decoration: underline;
+    }
+
+    /* Messages */
+    .messagelist {
+        margin: 0;
+        padding: 0;
+    }
+
+    .messagelist li {
+        border-radius: 6px;
+        margin: 10px 20px;
+        padding: 15px;
+        border-left: 4px solid;
+    }
+
+    .messagelist .success {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+    }
+
+    .messagelist .warning {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+        color: #856404;
+    }
+
+    .messagelist .error {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        #nav-global {
+            padding: 5px 10px;
+        }
+
+        #nav-global .nav-link {
+            display: block;
+            margin: 5px 0;
+        }
+
+        .dashboard .module {
+            margin: 10px 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block footer %}
+<div id="footer"
+    style="background: #f8f9fa; border-top: 1px solid #dee2e6; padding: 20px; text-align: center; color: #6c757d; margin-top: 40px;">
+    <p>
+        Weather247 Administration Panel |
+        <a href="/api/weather/monitoring/health/" target="_blank" style="color: #0066cc;">System Health</a> |
+        <a href="{% url 'admin:system_metrics' %}" style="color: #0066cc;">Metrics</a> |
+        Version 1.0.0
+    </p>
+    <p style="font-size: 12px; margin-top: 10px;">
+        Last updated: <span id="footer-timestamp"></span>
+    </p>
+</div>
+
+<script>
+    // Update footer timestamp
+    document.getElementById('footer-timestamp').textContent = new Date().toLocaleString();
+
+    // Add some interactive features
+    document.addEventListener('DOMContentLoaded', function () {
+        // Highlight current nav item
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('#nav-global .nav-link');
+
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            }
+        });
+
+        // Add loading states to forms
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function () {
+                const submitBtn = form.querySelector('input[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.value = 'Processing...';
+                    submitBtn.disabled = true;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

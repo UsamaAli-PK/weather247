@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather247 Frontend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Weather247 Frontend Test</h1>
+    
+    <div class="test-section">
+        <h2>🌐 Server Status</h2>
+        <div id="server-status">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔐 Authentication Test</h2>
+        <div id="auth-status">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🌤️ Weather API Test</h2>
+        <div id="weather-status">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 Frontend Links</h2>
+        <ul>
+            <li><a href="http://localhost:5173/" target="_blank">Landing Page</a></li>
+            <li><a href="http://localhost:5173/signin" target="_blank">Sign In</a></li>
+            <li><a href="http://localhost:5173/signup" target="_blank">Sign Up</a></li>
+            <li><a href="http://localhost:5173/dashboard" target="_blank">Dashboard</a></li>
+            <li><a href="http://localhost:5173/route-planner" target="_blank">Route Planner</a></li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Backend Links</h2>
+        <ul>
+            <li><a href="http://localhost:8000/admin/" target="_blank">Django Admin</a></li>
+            <li><a href="http://localhost:8000/api/weather/cities/" target="_blank">Cities API</a></li>
+            <li><a href="http://localhost:8000/api/auth/register/" target="_blank">Register API</a></li>
+        </ul>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+        
+        // Test server connectivity
+        async function testServer() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/weather/cities/`);
+                if (response.ok) {
+                    document.getElementById('server-status').innerHTML = '<span class="success">✅ Backend server is running</span>';
+                } else {
+                    document.getElementById('server-status').innerHTML = '<span class="error">❌ Backend server error</span>';
+                }
+            } catch (error) {
+                document.getElementById('server-status').innerHTML = '<span class="error">❌ Cannot connect to backend server</span>';
+            }
+        }
+        
+        // Test authentication
+        async function testAuth() {
+            try {
+                const regData = {
+                    username: 'frontendtest',
+                    email: 'frontendtest@example.com',
+                    password: 'testpass123',
+                    password_confirm: 'testpass123'
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/auth/register/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(regData)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('auth-status').innerHTML = '<span class="success">✅ Authentication working - Token received</span>';
+                    return data.token;
+                } else {
+                    document.getElementById('auth-status').innerHTML = '<span class="error">❌ Authentication failed</span>';
+                    return null;
+                }
+            } catch (error) {
+                document.getElementById('auth-status').innerHTML = '<span class="error">❌ Authentication error: ' + error.message + '</span>';
+                return null;
+            }
+        }
+        
+        // Test weather API
+        async function testWeather(token) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) {
+                    headers['Authorization'] = `Token ${token}`;
+                }
+                
+                const response = await fetch(`${API_BASE_URL}/weather/cities/`, { headers });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('weather-status').innerHTML = `<span class="success">✅ Weather API working - ${data.results.length} cities available</span>`;
+                } else {
+                    document.getElementById('weather-status').innerHTML = '<span class="error">❌ Weather API failed</span>';
+                }
+            } catch (error) {
+                document.getElementById('weather-status').innerHTML = '<span class="error">❌ Weather API error: ' + error.message + '</span>';
+            }
+        }
+        
+        // Run all tests
+        async function runTests() {
+            await testServer();
+            const token = await testAuth();
+            await testWeather(token);
+        }
+        
+        // Start tests when page loads
+        runTests();
+    </script>
+</body>
+</html>
