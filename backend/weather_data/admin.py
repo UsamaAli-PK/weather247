@@ -11,6 +11,7 @@ import json
 
 from .models import City, WeatherData, AirQualityData, WeatherForecast
 from accounts.models import User
+from .models import AlertRule, WeatherAlert
 
 
 class Weather247AdminSite(AdminSite):
@@ -438,6 +439,25 @@ class UserAdmin(admin.ModelAdmin):
         updated = queryset.update(is_active=False)
         self.message_user(request, f'{updated} users deactivated.')
     deactivate_users.short_description = 'Deactivate selected users'
+
+
+@admin.register(AlertRule, site=admin_site)
+class AlertRuleAdmin(admin.ModelAdmin):
+    list_display = (
+        'user', 'city', 'name', 'severity', 'is_active', 'email_enabled', 'sms_enabled', 'push_enabled', 'updated_at'
+    )
+    list_filter = ('is_active', 'severity', 'email_enabled', 'sms_enabled', 'push_enabled')
+    search_fields = ('user__email', 'city__name', 'name')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(WeatherAlert, site=admin_site)
+class WeatherAlertAdmin(admin.ModelAdmin):
+    list_display = (
+        'user', 'city', 'alert_type', 'severity', 'is_emergency', 'is_read', 'created_at'
+    )
+    list_filter = ('alert_type', 'severity', 'is_emergency', 'is_read', 'created_at')
+    search_fields = ('user__email', 'city__name', 'title', 'message')
 
 
 # Register the default Django admin models with our custom site
