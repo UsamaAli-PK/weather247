@@ -271,3 +271,27 @@ ERROR 2025-08-15 02:55:37,756 real_weather_service 19561 139629366178048 All wea
 ERROR 2025-08-15 02:55:38,037 real_weather_service 19561 139629366178048 All weather services failed for Testretrycity. Last error: None
 INFO 2025-08-15 02:55:38,041 real_weather_service 19561 139629366178048 Weather update completed: 10/10 cities updated
 ERROR 2025-08-15 02:55:38,395 real_weather_service 19561 139629366178048 All weather services failed for TestRetryCity. Last error: None
+INFO 2025-08-15 03:05:30,763 views 20244 140533839458560 Successfully added weather data for new city: Barcelona
+WARNING 2025-08-15 03:05:30,967 log 20244 140533839458560 Bad Request: /api/weather/cities/add/
+WARNING 2025-08-15 03:05:31,974 log 20244 140533839458560 Bad Request: /api/weather/current/
+INFO 2025-08-15 03:05:32,499 cache_manager 20244 140533839458560 Invalidated cache for city: TestCity
+ERROR 2025-08-15 03:05:32,899 real_weather_service 20244 140533839458560 All weather services failed for Test City. Last error: None
+INFO 2025-08-15 03:05:32,900 real_weather_service 20244 140533839458560 Weather update completed: 1/1 cities updated
+WARNING 2025-08-15 03:05:32,902 real_weather_service 20244 140533839458560 Service 1 attempt 1 failed for Test City: API Error
+WARNING 2025-08-15 03:05:33,902 real_weather_service 20244 140533839458560 Service 1 attempt 2 failed for Test City: API Error
+WARNING 2025-08-15 03:05:35,903 real_weather_service 20244 140533839458560 Service 1 attempt 3 failed for Test City: API Error
+ERROR 2025-08-15 03:05:35,903 real_weather_service 20244 140533839458560 All weather services failed for Test City. Last error: API Error
+ERROR 2025-08-15 03:05:36,410 real_weather_service 20244 140533839458560 All weather services failed for Integration Test City. Last error: None
+INFO 2025-08-15 03:05:36,412 views 20244 140533839458560 Successfully added weather data for new city: Integration Test City
+ERROR 2025-08-15 03:05:36,785 real_weather_service 20244 140533839458560 All weather services failed for Integration Test City. Last error: None
+WARNING 2025-08-15 03:05:37,005 log 20244 140533839458560 Bad Request: /api/weather/cities/add/
+ERROR 2025-08-15 03:05:37,275 real_weather_service 20244 140533839458560 All weather services failed for NonExistentCity12345. Last error: None
+INFO 2025-08-15 03:05:39,247 cache_manager 20287 139995417448704 Invalidated cache for city: TestCity
+ERROR 2025-08-15 03:05:40,057 real_weather_service 20288 140078262173952 All weather services failed for InvalidCity123. Last error: None
+ERROR 2025-08-15 03:05:40,381 real_weather_service 20288 140078262173952 Error getting air quality for 35.6828387, 139.7594549: NOT NULL constraint failed: weather_data_airqualitydata.no
+ERROR 2025-08-15 03:05:40,544 real_weather_service 20288 140078262173952 Error getting forecast for Tokyo: NOT NULL constraint failed: weather_data_weatherforecast.temperature_avg
+WARNING 2025-08-15 03:05:40,545 real_weather_service 20288 140078262173952 Forecast data unavailable for Tokyo: NOT NULL constraint failed: weather_data_weatherforecast.temperature_avg
+ERROR 2025-08-15 03:05:41,941 real_weather_service 20288 140078262173952 All weather services failed for Invalidcity123. Last error: None
+ERROR 2025-08-15 03:05:42,225 real_weather_service 20288 140078262173952 All weather services failed for Testretrycity. Last error: None
+INFO 2025-08-15 03:05:42,230 real_weather_service 20288 140078262173952 Weather update completed: 10/10 cities updated
+ERROR 2025-08-15 03:05:42,599 real_weather_service 20288 140078262173952 All weather services failed for TestRetryCity. Last error: None

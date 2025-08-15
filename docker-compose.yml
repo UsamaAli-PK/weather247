@@ -9,8 +9,29 @@ services:
       - SECRET_KEY=${SECRET_KEY:-change-me}
       - DEBUG=${DEBUG:-False}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - REDIS_URL=redis://redis:6379/0
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis
+  worker:
+    build: ./backend
+    command: celery -A weather247_backend worker -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=weather247_backend.settings
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis
+  beat:
+    build: ./backend
+    command: celery -A weather247_backend beat -l info
+    environment:
+      - DJANGO_SETTINGS_MODULE=weather247_backend.settings
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./backend:/app
     depends_on:
