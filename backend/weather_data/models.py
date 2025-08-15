@@ -474,3 +474,93 @@ class PerformanceBaseline(models.Model):
     def is_above_critical(self, value):
         """Check if value is above critical threshold"""
         return value > self.critical_threshold
+
+
+class AlertRule(models.Model):
+    """User-defined weather alert rules with thresholds and preferences"""
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alert_rules')
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='alert_rules')
+
+    # Thresholds (nullable to ignore)
+    temperature_min = models.FloatField(null=True, blank=True)
+    temperature_max = models.FloatField(null=True, blank=True)
+    wind_speed_max = models.FloatField(null=True, blank=True)
+    humidity_min = models.IntegerField(null=True, blank=True)
+    visibility_min_km = models.FloatField(null=True, blank=True)
+
+    # Delivery preferences
+    email_enabled = models.BooleanField(default=True)
+    sms_enabled = models.BooleanField(default=False)
+    push_enabled = models.BooleanField(default=False)
+
+    # Quiet hours (optional)
+    quiet_hours_start = models.TimeField(null=True, blank=True)
+    quiet_hours_end = models.TimeField(null=True, blank=True)
+
+    # Rule status
+    is_active = models.BooleanField(default=True)
+    severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
+    name = models.CharField(max_length=120, default='Custom Alert Rule')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'city', 'name']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.city.name} ({self.name})"
+
+
+class WeatherAlert(models.Model):
+    """Persisted weather alerts delivered to users"""
+    ALERT_TYPES = [
+        ('temperature_high', 'High Temperature'),
+        ('temperature_low', 'Low Temperature'),
+        ('wind_speed', 'High Wind'),
+        ('visibility', 'Low Visibility'),
+        ('severe_weather', 'Severe Weather'),
+        ('custom', 'Custom'),
+    ]
+
+    SEVERITY_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+        ('emergency', 'Emergency'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='weather_alerts')
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='weather_alerts')
+    alert_type = models.CharField(max_length=50, choices=ALERT_TYPES)
+    severity = models.CharField(max_length=10, choices=SEVERITY_LEVELS, default='medium')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+
+    weather_data = models.JSONField(default=dict)
+    delivered_via = models.JSONField(default=list, blank=True)
+
+    is_emergency = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['city', 'created_at']),
+            models.Index(fields=['alert_type', 'severity']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.city.name}: {self.alert_type} ({self.severity})"

@@ -24,6 +24,9 @@ from .push_views import (
     send_daily_forecast, subscription_stats, cleanup_subscriptions
 )
 import logging
+from .models import AlertRule, WeatherAlert
+from .serializers import AlertRuleSerializer, WeatherAlertSerializer
+
 
 logger = logging.getLogger('weather247')
 
@@ -2308,3 +2311,46 @@ def api_bulk_health_check(request):
             {'error': 'Failed to perform bulk health check'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def alert_rules(request):
+    """List or create alert rules for the authenticated user"""
+    if request.method == 'GET':
+        rules = AlertRule.objects.filter(user=request.user)
+        return Response(AlertRuleSerializer(rules, many=True).data)
+    
+    serializer = AlertRuleSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def alert_rule_detail(request, rule_id):
+    """Update or delete an alert rule"""
+    try:
+        rule = AlertRule.objects.get(id=rule_id, user=request.user)
+    except AlertRule.DoesNotExist:
+        return Response({'error': 'Alert rule not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method in ['PUT', 'PATCH']:
+        serializer = AlertRuleSerializer(rule, data=request.data, partial=(request.method == 'PATCH'))
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    rule.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_alerts(request):
+    """List recent weather alerts for the authenticated user"""
+    alerts = WeatherAlert.objects.filter(user=request.user).order_by('-created_at')[:100]
+    return Response(WeatherAlertSerializer(alerts, many=True).data)

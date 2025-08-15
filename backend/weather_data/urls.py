@@ -95,6 +95,11 @@ urlpatterns = [
     path('push-notifications/stats/', views.subscription_stats, name='push-subscription-stats'),
     path('push-notifications/cleanup/', views.cleanup_subscriptions, name='push-cleanup-subscriptions'),
     
+    # Alerts API
+    path('alerts/rules/', views.alert_rules, name='alert-rules'),
+    path('alerts/rules/<int:rule_id>/', views.alert_rule_detail, name='alert-rule-detail'),
+    path('alerts/recent/', views.user_alerts, name='user-alerts'),
+    
     # System Monitoring
     path('monitoring/', include('weather_data.system_monitoring_urls')),
 ]

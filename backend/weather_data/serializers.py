@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import City, WeatherData, AirQualityData, WeatherForecast, HistoricalWeatherData, WeatherPrediction, UserWeatherPreference
 from .api_management import APIProvider, APIUsage, APIFailover
+from .models import AlertRule, WeatherAlert
 
 
 class CitySerializer(serializers.ModelSerializer):
@@ -164,3 +165,25 @@ class APIFailoverSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'primary_provider', 'fallback_provider', 'failed_at'
         )
+
+
+class AlertRuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlertRule
+        fields = (
+            'id', 'user', 'city', 'temperature_min', 'temperature_max', 'wind_speed_max',
+            'humidity_min', 'visibility_min_km', 'email_enabled', 'sms_enabled', 'push_enabled',
+            'quiet_hours_start', 'quiet_hours_end', 'is_active', 'severity', 'name',
+            'created_at', 'updated_at'
+        )
+        read_only_fields = ('user', 'created_at', 'updated_at')
+
+
+class WeatherAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WeatherAlert
+        fields = (
+            'id', 'user', 'city', 'alert_type', 'severity', 'title', 'message',
+            'weather_data', 'delivered_via', 'is_emergency', 'is_read', 'created_at'
+        )
+        read_only_fields = ('user', 'created_at')
