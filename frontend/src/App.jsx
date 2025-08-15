@@ -10,6 +10,8 @@ import EnhancedRoutePlanner from './pages/EnhancedRoutePlanner';
 import PWASettings from './pages/PWASettings';
 import PWAManager from './components/PWAManager';
 import './App.css';
+import Alerts from './pages/Alerts';
+import Predictions from './pages/Predictions';
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
             <Route path="/route-planner" element={<EnhancedRoutePlanner />} />
             <Route path="/simple-route-planner" element={<RoutePlanner />} />
             <Route path="/pwa-settings" element={<PWASettings />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/predictions" element={<Predictions />} />
           </Routes>
         </div>
       </Router>

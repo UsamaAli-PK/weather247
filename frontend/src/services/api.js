@@ -266,6 +266,31 @@ class ApiService {
     }
   }
 
+  async getBatchAIPredictions(cityNames) {
+    try {
+      const params = new URLSearchParams({ cities: cityNames.join(',') });
+      const response = await fetch(`${API_BASE_URL}/weather/ai-predictions/?${params}`, {
+        headers: this.getHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Batch AI predictions fetch error:', error);
+      throw error;
+    }
+  }
+
+  async getPredictionAnalytics() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/weather/ai-predictions/analytics/`, {
+        headers: this.getHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Prediction analytics fetch error:', error);
+      throw error;
+    }
+  }
+
   async getHistoricalData(cityName, days = 30) {
     try {
       const params = new URLSearchParams({ city: cityName, days: days.toString() });
@@ -340,6 +365,48 @@ class ApiService {
       console.error('Alert trigger error:', error);
       throw error;
     }
+  }
+
+  // Alerts API
+  async getAlertRules() {
+    const response = await fetch(`${API_BASE_URL}/weather/alerts/rules/`, {
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
+  async createAlertRule(rule) {
+    const response = await fetch(`${API_BASE_URL}/weather/alerts/rules/`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(rule),
+    });
+    return this.handleResponse(response);
+  }
+
+  async updateAlertRule(ruleId, updates) {
+    const response = await fetch(`${API_BASE_URL}/weather/alerts/rules/${ruleId}/`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(updates),
+    });
+    return this.handleResponse(response);
+  }
+
+  async deleteAlertRule(ruleId) {
+    const response = await fetch(`${API_BASE_URL}/weather/alerts/rules/${ruleId}/`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error('Failed to delete alert rule');
+    return true;
+  }
+
+  async getRecentAlerts() {
+    const response = await fetch(`${API_BASE_URL}/weather/alerts/recent/`, {
+      headers: this.getHeaders(),
+    });
+    return this.handleResponse(response);
   }
 
   // Route planning methods
