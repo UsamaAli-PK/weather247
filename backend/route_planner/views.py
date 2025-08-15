@@ -205,6 +205,73 @@ def analyze_route_weather_conditions(weather_points):
     return alerts
 
 
+# Hazard scoring helpers
+
+def _compute_point_hazard_score(weather):
+    score = 0.0
+    try:
+        temp = weather.get('temperature')
+        wind = weather.get('wind_speed') or 0
+        vis = weather.get('visibility')
+        condition = (weather.get('weather_condition') or '').lower()
+        
+        if temp is not None:
+            if temp < 0:
+                score += 35
+            elif temp > 35:
+                score += 20
+        if wind > 50:
+            score += 35
+        elif wind > 30:
+            score += 15
+        if vis is not None and vis < 1.0:
+            score += 30
+        if 'storm' in condition or 'thunderstorm' in condition:
+            score += 40
+        if 'snow' in condition:
+            score += 30
+        if 'rain' in condition or 'drizzle' in condition:
+            score += 15
+        return max(0.0, min(100.0, score))
+    except Exception:
+        return 0.0
+
+
+def _summarize_alerts(alerts):
+    summary = {'by_type': {}, 'by_severity': {}}
+    for a in alerts:
+        t = a.get('alert_type')
+        s = a.get('severity')
+        summary['by_type'][t] = summary['by_type'].get(t, 0) + 1
+        summary['by_severity'][s] = summary['by_severity'].get(s, 0) + 1
+    return summary
+
+
+def _risk_level_from_score(score):
+    if score >= 70:
+        return 'severe'
+    if score >= 40:
+        return 'high'
+    if score >= 20:
+        return 'medium'
+    return 'low'
+
+
+def compute_route_hazard(weather_points, alerts):
+    point_scores = []
+    for p in weather_points:
+        ps = _compute_point_hazard_score(p.get('weather_data', {}))
+        p['hazard_score'] = ps
+        point_scores.append(ps)
+    overall = sum(point_scores) / len(point_scores) if point_scores else 0.0
+    summary = _summarize_alerts(alerts)
+    return {
+        'hazard_score': round(overall, 1),
+        'risk_level': _risk_level_from_score(overall),
+        'hazard_summary': summary
+    }
+
+
 # API Views
 class RouteListCreateView(generics.ListCreateAPIView):
     serializer_class = RouteSerializer
@@ -264,6 +331,10 @@ def create_route_with_weather(request):
         # Get weather data along the route
         weather_points = get_weather_along_route(route_data['waypoints'])
         
+        # Analyze weather conditions and compute hazard metrics
+        alerts = analyze_route_weather_conditions(weather_points)
+        hazard = compute_route_hazard(weather_points, alerts)
+        
         # Create weather point objects
         for point in weather_points:
             weather = point['weather_data']
@@ -279,16 +350,22 @@ def create_route_with_weather(request):
                 weather_description=weather['weather_description'],
                 weather_icon=weather['weather_icon'],
                 precipitation_probability=weather['precipitation_probability'],
-                visibility=weather['visibility']
+                visibility=weather['visibility'],
+                hazard_score=point.get('hazard_score')
             )
 
-        # Analyze weather conditions and create alerts
-        alerts = analyze_route_weather_conditions(weather_points)
+        # Persist alerts
         for alert_data in alerts:
             RouteAlert.objects.create(
                 route=route,
                 **alert_data
             )
+
+        # Save route hazard aggregates
+        route.hazard_score = hazard['hazard_score']
+        route.risk_level = hazard['risk_level']
+        route.hazard_summary = hazard['hazard_summary']
+        route.save(update_fields=['hazard_score', 'risk_level', 'hazard_summary'])
 
         # Return the created route with weather data
         serializer = RouteWithWeatherSerializer(route)
@@ -310,6 +387,10 @@ def get_route_weather(request, route_id):
     # Get fresh weather data along the route
     weather_points = get_weather_along_route(route.waypoints)
     
+    # Analyze and compute hazard
+    alerts = analyze_route_weather_conditions(weather_points)
+    hazard = compute_route_hazard(weather_points, alerts)
+    
     # Update weather point objects
     RouteWeatherPoint.objects.filter(route=route).delete()  # Clear old data
     for point in weather_points:
@@ -326,17 +407,23 @@ def get_route_weather(request, route_id):
             weather_description=weather['weather_description'],
             weather_icon=weather['weather_icon'],
             precipitation_probability=weather['precipitation_probability'],
-            visibility=weather['visibility']
+            visibility=weather['visibility'],
+            hazard_score=point.get('hazard_score')
         )
 
     # Update alerts
     RouteAlert.objects.filter(route=route).delete()  # Clear old alerts
-    alerts = analyze_route_weather_conditions(weather_points)
     for alert_data in alerts:
         RouteAlert.objects.create(
             route=route,
             **alert_data
         )
+
+    # Save route hazard aggregates
+    route.hazard_score = hazard['hazard_score']
+    route.risk_level = hazard['risk_level']
+    route.hazard_summary = hazard['hazard_summary']
+    route.save(update_fields=['hazard_score', 'risk_level', 'hazard_summary'])
 
     serializer = RouteWithWeatherSerializer(route)
     return Response(serializer.data)

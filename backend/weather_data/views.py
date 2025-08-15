@@ -249,58 +249,98 @@ def refresh_weather_data(request):
         )
 
 
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_ai_predictions(request):
-    """Get AI-powered 24-hour weather predictions"""
+    """Get AI-powered 24-hour weather predictions
+    - Accepts ?city=Name or ?cities=Name1,Name2
+    - Persists summary predictions to WeatherPrediction
+    """
     city_name = request.GET.get('city')
+    cities_param = request.GET.get('cities')
     
-    if not city_name:
+    if not city_name and not cities_param:
         return Response(
-            {'error': 'City name is required'},
+            {'error': 'City name is required (use city or cities query param)'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    requested_names = []
+    if cities_param:
+        requested_names = [c.strip() for c in cities_param.split(',') if c.strip()]
+    elif city_name:
+        requested_names = [city_name.strip()]
+    
+    results = []
     try:
-        # Get city and current weather
-        city = City.objects.filter(name__iexact=city_name).first()
-        if not city:
-            # Try to get weather data first to create city
-            weather_data = weather_manager.get_comprehensive_weather(city_name)
-            if not weather_data:
-                return Response(
-                    {'error': 'City not found'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            city = weather_data['current'].city
-        
-        # Get latest weather data
-        current_weather = WeatherData.objects.filter(city=city).order_by('-timestamp').first()
-        if not current_weather:
-            # Get fresh weather data
-            weather_data = weather_manager.get_comprehensive_weather(city_name)
-            if weather_data:
-                current_weather = weather_data['current']
-            else:
-                return Response(
-                    {'error': 'Unable to get current weather data'},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
-                )
-        
-        # Generate AI predictions using advanced predictor (lazy import)
-        try:
-            from .ai_predictions import advanced_predictor
-            predictions = advanced_predictor.predict_advanced_24h(city, current_weather)
-        except Exception:
+        from .models import WeatherPrediction
+    except Exception:
+        WeatherPrediction = None
+    
+    try:
+        from .ai_predictions import advanced_predictor
+    except Exception:
+        advanced_predictor = None
+    
+    try:
+        for name in requested_names:
+            # Get city and current weather
+            city = City.objects.filter(name__iexact=name).first()
+            if not city:
+                weather_data = weather_manager.get_comprehensive_weather(name)
+                if not weather_data:
+                    results.append({'city': name, 'error': 'City not found'})
+                    continue
+                city = weather_data['current'].city
+            
+            current_weather = WeatherData.objects.filter(city=city).order_by('-timestamp').first()
+            if not current_weather:
+                weather_data = weather_manager.get_comprehensive_weather(name)
+                if weather_data:
+                    current_weather = weather_data['current']
+                else:
+                    results.append({'city': name, 'error': 'Unable to get current weather data'})
+                    continue
+            
+            # Generate predictions
             predictions = []
+            if advanced_predictor:
+                try:
+                    predictions = advanced_predictor.predict_advanced_24h(city, current_weather)
+                except Exception:
+                    predictions = []
+            
+            # Persist lightweight summary predictions (optional)
+            if WeatherPrediction and predictions:
+                try:
+                    for p in predictions[:4]:  # store first 4 hours to avoid bloat
+                        WeatherPrediction.objects.update_or_create(
+                            city=city,
+                            prediction_date=p.get('datetime'),
+                            model_version='v1.0',
+                            defaults={
+                                'predicted_temperature': p.get('temperature', 0),
+                                'predicted_humidity': int(p.get('humidity', 0)) if p.get('humidity') is not None else 0,
+                                'predicted_pressure': float(p.get('pressure', 0)) if p.get('pressure') is not None else 0,
+                                'predicted_wind_speed': float(p.get('wind_speed', 0)) if p.get('wind_speed') is not None else 0,
+                                'predicted_condition': p.get('condition', 'Unknown'),
+                                'confidence_score': float(p.get('confidence', 0)) / 100.0 if p.get('confidence') else 0.0,
+                                'features_used': {'source': 'advanced_predictor'}
+                            }
+                        )
+                except Exception:
+                    pass
+            
+            results.append({
+                'city': city.name,
+                'current_weather': WeatherDataSerializer(current_weather).data,
+                'predictions': predictions,
+                'generated_at': timezone.now().isoformat()
+            })
         
-        return Response({
-            'city': city.name,
-            'current_weather': WeatherDataSerializer(current_weather).data,
-            'predictions': predictions,
-            'generated_at': timezone.now().isoformat()
-        })
+        if len(results) == 1:
+            return Response(results[0])
+        return Response({'results': results})
         
     except Exception as e:
         logger.error(f"Error getting AI predictions: {e}")
@@ -2354,3 +2394,32 @@ def user_alerts(request):
     """List recent weather alerts for the authenticated user"""
     alerts = WeatherAlert.objects.filter(user=request.user).order_by('-created_at')[:100]
     return Response(WeatherAlertSerializer(alerts, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def prediction_analytics(request):
+    """Simple analytics over stored WeatherPrediction rows"""
+    try:
+        from .models import WeatherPrediction
+    except Exception:
+        return Response({'predictions_stored': 0, 'detail': 'WeatherPrediction model unavailable'})
+    
+    qs = WeatherPrediction.objects.all()
+    count = qs.count()
+    if count == 0:
+        return Response({'predictions_stored': 0})
+    
+    # Aggregate basic stats
+    temps = list(qs.values_list('predicted_temperature', flat=True)[:1000])
+    avg_temp = round(sum(temps) / len(temps), 2) if temps else 0
+    cities = list(qs.values_list('city__name', flat=True)[:1000])
+    city_counts = {}
+    for c in cities:
+        city_counts[c] = city_counts.get(c, 0) + 1
+    
+    return Response({
+        'predictions_stored': count,
+        'sample_avg_temp': avg_temp,
+        'top_cities': sorted(city_counts.items(), key=lambda kv: kv[1], reverse=True)[:5]
+    })

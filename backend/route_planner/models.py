@@ -18,6 +18,10 @@ class Route(models.Model):
     waypoints = models.JSONField(default=list, help_text="List of waypoints with lat/lon coordinates")
     distance_km = models.FloatField(null=True, blank=True, help_text="Total route distance in kilometers")
     estimated_duration_minutes = models.IntegerField(null=True, blank=True, help_text="Estimated travel time in minutes")
+    # Hazard scoring
+    hazard_score = models.FloatField(null=True, blank=True, help_text="Overall route hazard score (0-100)")
+    risk_level = models.CharField(max_length=20, default='unknown', help_text="Overall risk level label")
+    hazard_summary = models.JSONField(default=dict, blank=True, help_text="Aggregated alert counts and metrics")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,6 +47,8 @@ class RouteWeatherPoint(models.Model):
     weather_icon = models.CharField(max_length=10)
     precipitation_probability = models.FloatField(default=0, help_text="Precipitation probability (0-1)")
     visibility = models.FloatField(null=True, blank=True, help_text="Visibility in km")
+    # Hazard scoring
+    hazard_score = models.FloatField(null=True, blank=True, help_text="Point hazard score (0-100)")
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

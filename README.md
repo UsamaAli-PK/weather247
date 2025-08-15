@@ -105,3 +105,64 @@ This project is developed as part of an academic project at Government Post Grad
 - Muhammad Zaheer Ul Din Babar (Group Leader)
 - Waqas Ahmad
 
+## Deployment (Docker)
+
+### Quick start
+
+1. Create an `.env` file with at least:
+```
+DJANGO_SETTINGS_MODULE=weather247_backend.settings
+OPENWEATHER_API_KEY=demo-key
+SECRET_KEY=change-me
+DEBUG=False
+ALLOWED_HOSTS=*
+```
+
+2. Build and run:
+```
+docker compose up --build -d
+```
+
+3. Run migrations and create superuser:
+```
+docker compose exec web python manage.py migrate
+```
+
+### File/Folder Overview
+
+- `backend/`: Django backend
+  - `accounts/`: custom user model, auth endpoints
+  - `weather_data/`: weather models, views, serializers, caching, alerts, system monitoring
+    - `views.py`: API endpoints (current, forecast, AI predictions, analytics, health)
+    - `models.py`: `City`, `WeatherData`, `AirQualityData`, `WeatherForecast`, `HistoricalWeatherData`, `WeatherPrediction`, alert/push/system models
+    - `real_weather_service.py`: weather manager with API integration and fallback
+    - `validators.py`: validation utilities
+    - `cache_manager.py`: cache helpers
+    - `alert_system.py`: persisted alert engine and delivery
+    - `system_monitoring*.py`: monitoring services and core
+    - `urls.py`: routes for weather API
+  - `route_planner/`: routing with weather, alerts, hazard scoring
+    - `models.py`: `Route`, `RouteWeatherPoint`, `RouteAlert`, `TravelPlan` (+ hazard fields)
+    - `views.py`: create routes, fetch route weather, compute alerts/hazard
+    - `serializers.py`: serializers including hazard fields
+  - `weather247_backend/`: Django project settings and URLs
+- `frontend/`: static/demo frontend resources
+- `.kiro/specs/`: specification tasks
+- `run_tests.py`: comprehensive test runner
+
+### Local run
+
+```
+python3 -m venv backend/venv
+source backend/venv/bin/activate
+pip install -r backend/requirements.txt
+export DJANGO_SETTINGS_MODULE=weather247_backend.settings
+export PYTHONPATH=$(pwd)/backend
+python backend/manage.py migrate
+python backend/manage.py runserver 0.0.0.0:8000
+```
+
+### Hosting
+
+- Containerize with Docker Compose (web + optional redis/celery) and deploy to any container host (Render, Fly.io, AWS ECS). Configure `OPENWEATHER_API_KEY`, email/Twilio only if needed. Optional deps (`celery`, `psutil`, `pywebpush`, `numpy`) are guarded.
+

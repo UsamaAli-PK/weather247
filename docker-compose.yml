@@ -1,0 +1,21 @@
+version: '3.9'
+services:
+  web:
+    build: ./backend
+    command: python manage.py migrate && python manage.py runserver 0.0.0.0:8000
+    environment:
+      - DJANGO_SETTINGS_MODULE=weather247_backend.settings
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-demo-key}
+      - SECRET_KEY=${SECRET_KEY:-change-me}
+      - DEBUG=${DEBUG:-False}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - redis
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"

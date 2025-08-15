@@ -10,6 +10,7 @@ class RouteSerializer(serializers.ModelSerializer):
             'id', 'user', 'name', 'start_location', 'end_location',
             'start_latitude', 'start_longitude', 'end_latitude', 'end_longitude',
             'waypoints', 'distance_km', 'estimated_duration_minutes',
+            'hazard_score', 'risk_level', 'hazard_summary',
             'created_at', 'updated_at'
         )
         read_only_fields = ('user', 'created_at', 'updated_at')
@@ -23,7 +24,7 @@ class RouteWeatherPointSerializer(serializers.ModelSerializer):
             'id', 'route', 'latitude', 'longitude', 'location_name',
             'distance_from_start_km', 'temperature', 'humidity', 'wind_speed',
             'weather_condition', 'weather_description', 'weather_icon',
-            'precipitation_probability', 'visibility', 'timestamp'
+            'precipitation_probability', 'visibility', 'hazard_score', 'timestamp'
         )
         read_only_fields = ('route', 'timestamp')
 
@@ -66,6 +67,7 @@ class RouteWithWeatherSerializer(serializers.ModelSerializer):
             'id', 'user', 'name', 'start_location', 'end_location',
             'start_latitude', 'start_longitude', 'end_latitude', 'end_longitude',
             'waypoints', 'distance_km', 'estimated_duration_minutes',
+            'hazard_score', 'risk_level', 'hazard_summary',
             'weather_points', 'alerts', 'created_at', 'updated_at'
         )
         read_only_fields = ('user', 'created_at', 'updated_at')

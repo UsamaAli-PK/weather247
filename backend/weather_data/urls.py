@@ -16,6 +16,7 @@ urlpatterns = [
     
     # AI and Analytics endpoints
     path('ai-predictions/', views.get_ai_predictions, name='ai-predictions'),
+    path('ai-predictions/analytics/', views.prediction_analytics, name='prediction-analytics'),
     path('historical/', views.get_historical_data, name='historical-data'),
     path('compare/', views.compare_cities, name='compare-cities'),
     
