@@ -669,7 +669,7 @@ services:
 #### 9.1.2 Development Tools
 - **Django Development Server**: Local backend development
 - **Vite Dev Server**: Hot reload frontend development
-- **ngrok**: External access for testing
+- **Local Development**: External access for testing
 - **Postman**: API testing and documentation
 
 ### 9.2 Production Environment

@@ -120,7 +120,7 @@
 - **Version Control**: Git + GitHub
 - **API Testing**: Postman/Swagger
 - **Monitoring**: Custom system monitoring
-- **Deployment**: ngrok for development, cloud for production
+- **Deployment**: Local development, cloud for production
 
 ### 5.4 External APIs
 - **Primary**: OpenWeatherMap API
