@@ -80,7 +80,7 @@ The project encompasses:
 - **AI Integration**: Machine learning for weather predictions
 - **API Integration**: Multiple weather service providers
 - **Testing**: Comprehensive testing suite
-- **Deployment**: Docker containerization and cloud deployment
+- **Deployment**: Local development and cloud deployment
 
 ### 2.5 Research Questions
 
@@ -672,7 +672,7 @@ The project enhanced skills in:
 - **Frontend Development**: React, PWA, responsive design
 - **API Integration**: REST APIs, external service integration
 - **Machine Learning**: Model development and integration
-- **DevOps**: Docker, deployment, CI/CD
+- **DevOps**: Deployment, CI/CD, monitoring
 
 #### 9.2.2 Project Management Skills
 Project management experience includes:

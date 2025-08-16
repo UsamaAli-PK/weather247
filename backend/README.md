@@ -71,7 +71,7 @@ backend/
 │   └── 📄 asgi.py              # ASGI application
 ├── 📄 manage.py                 # Django management script
 ├── 📄 requirements.txt          # Python dependencies
-├── 📄 Dockerfile                # Docker configuration
+
 └── 📄 .env.example             # Environment variables template
 ```
 
@@ -591,17 +591,7 @@ python manage.py migrate
 gunicorn weather247_backend.wsgi:application --bind 0.0.0.0:8000
 ```
 
-### **Docker Deployment**
-```bash
-# Build and run with Docker
-docker-compose up -d
 
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
 
 ---
 

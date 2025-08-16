@@ -52,7 +52,6 @@ Weather247 is an intelligent weather application that integrates multiple weathe
 ### **Prerequisites**
 - Python 3.13+
 - Node.js 18+
-- Docker & Docker Compose
 - PostgreSQL 15+
 - Redis 6.4+
 
@@ -62,16 +61,17 @@ git clone https://github.com/UsamaAli-PK/weather247.git
 cd weather247
 ```
 
-### **2. Start with Docker (Recommended)**
+### **2. Start with Local Services**
 ```bash
-# Start all services
-docker-compose up -d
+# Start PostgreSQL database
+sudo systemctl start postgresql
 
-# View logs
-docker-compose logs -f
+# Start Redis server
+sudo systemctl start redis
 
-# Stop services
-docker-compose down
+# Verify services are running
+sudo systemctl status postgresql
+sudo systemctl status redis
 ```
 
 ### **3. Manual Setup**
@@ -120,7 +120,7 @@ weather247/
 ├── 📁 docs/                   # Technical documentation
 ├── 📁 tests/                  # Test suites & configurations
 ├── 📁 scripts/                # Utility scripts
-├── 📁 docker/                 # Docker configurations
+
 └── 📁 .github/                # GitHub workflows & templates
 ```
 
@@ -147,7 +147,6 @@ weather247/
 - **Routing**: React Router DOM 7.6.1
 
 ### **Infrastructure & DevOps**
-- **Containerization**: Docker + Docker Compose
 - **Version Control**: Git + GitHub
 - **CI/CD**: GitHub Actions
 - **API Testing**: Postman/Swagger
@@ -272,38 +271,51 @@ npm run test:coverage
 
 ### **Development Environment**
 ```bash
-# Local development
-docker-compose up -d
+# Start backend server
+cd backend
+python manage.py runserver
 
-# View running services
-docker-compose ps
+# Start frontend server (in new terminal)
+cd frontend
+npm run dev
 
-# View logs
-docker-compose logs -f web
+# Start Celery worker (in new terminal)
+cd backend
+celery -A weather247_backend worker -l info
+
+# Start Celery beat (in new terminal)
+cd backend
+celery -A weather247_backend beat -l info
 ```
 
 ### **Production Deployment**
 ```bash
-# Production build
-docker-compose -f docker-compose.prod.yml up -d
-
 # Environment variables
 cp .env.example .env
 # Edit .env with production values
 
 # Database migrations
-docker-compose exec web python manage.py migrate
+python manage.py migrate
 
 # Collect static files
-docker-compose exec web python manage.py collectstatic
+python manage.py collectstatic --noinput
+
+# Start production server
+gunicorn weather247_backend.wsgi:application --bind 0.0.0.0:8000
+
+# Start Celery worker
+celery -A weather247_backend worker -l info
+
+# Start Celery beat
+celery -A weather247_backend beat -l info
 ```
 
 ### **Cloud Deployment**
 - **Platform**: AWS, Google Cloud, or Azure
-- **Container Orchestration**: ECS, GKE, or AKS
 - **Database**: Managed PostgreSQL service
 - **Cache**: Managed Redis service
 - **Storage**: Object storage for media files
+- **Application Server**: EC2, Compute Engine, or Virtual Machine
 
 ---
 

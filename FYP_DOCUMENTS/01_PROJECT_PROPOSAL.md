@@ -84,7 +84,7 @@
 - **Route Planning**: Weather-integrated travel optimization
 - **Real-time Updates**: WebSocket and push notifications
 - **Testing**: Unit, integration, and performance testing
-- **Deployment**: Docker containerization and cloud deployment
+- **Deployment**: Local development and cloud deployment
 
 ### 4.2 Out of Scope
 - **Mobile App Development**: Focus on PWA for cross-platform compatibility
@@ -116,7 +116,7 @@
 - **Routing**: React Router DOM 7.6.1
 
 ### 5.3 Infrastructure & DevOps
-- **Containerization**: Docker + Docker Compose
+- **Version Control**: Git + GitHub
 - **Version Control**: Git + GitHub
 - **API Testing**: Postman/Swagger
 - **Monitoring**: Custom system monitoring
@@ -180,7 +180,7 @@
 
 ### 7.2 Required Resources
 - **Hardware**: Personal computer with 8GB+ RAM
-- **Software**: VS Code, Docker Desktop, Postman
+- **Software**: VS Code, Postman, Database tools
 - **APIs**: Weather service API keys
 - **Cloud Platform**: AWS/Google Cloud (free tier)
 
@@ -199,7 +199,7 @@
 1. **Full-Stack Development**: End-to-end application development
 2. **AI/ML Integration**: Machine learning implementation
 3. **API Integration**: Multiple third-party service integration
-4. **Modern Web Technologies**: React, Django, Docker
+4. **Modern Web Technologies**: React, Django, Python
 5. **Project Management**: Complete project lifecycle experience
 
 ### 8.3 Innovation Contributions

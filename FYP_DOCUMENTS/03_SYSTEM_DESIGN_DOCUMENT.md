@@ -637,7 +637,7 @@ CREATE INDEX idx_forecast_city_temp ON weather_data_weatherforecast(city_id, tem
 
 #### 9.1.1 Local Development
 ```yaml
-# docker-compose.yml
+# Local Development Setup
 version: '3.8'
 services:
   web:
@@ -683,7 +683,7 @@ services:
 
 #### 9.2.2 Production Configuration
 ```yaml
-# Production docker-compose.yml
+# Production Deployment
 version: '3.8'
 services:
   web:
@@ -738,7 +738,10 @@ jobs:
       - name: Deploy to Production
         run: |
           # Deployment commands
-          docker-compose -f docker-compose.prod.yml up -d
+          # Start production services
+python manage.py runserver 0.0.0.0:8000
+celery -A weather247_backend worker -l info
+celery -A weather247_backend beat -l info
 ```
 
 ---

@@ -130,7 +130,7 @@ Weather247 is an intelligent weather application that provides real-time weather
 #### 3.2.1 Prerequisites
 - **Python**: 3.13 or later
 - **Node.js**: 18.0 or later
-- **Docker**: 20.10 or later
+- **Python**: 3.13 or later
 - **Git**: Latest version
 
 #### 3.2.2 Backend Setup
@@ -173,19 +173,20 @@ npm install
 npm run dev
 ```
 
-#### 3.2.4 Docker Setup
+#### 3.2.4 Local Services Setup
 ```bash
 # Navigate to project root
 cd weather247
 
-# Start all services
-docker-compose up -d
+# Start PostgreSQL database
+sudo systemctl start postgresql
 
-# View logs
-docker-compose logs -f
+# Start Redis server
+sudo systemctl start redis
 
-# Stop services
-docker-compose down
+# Verify services are running
+sudo systemctl status postgresql
+sudo systemctl status redis
 ```
 
 ### 3.3 Environment Configuration
@@ -714,35 +715,25 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 ```
 
-#### 10.3.2 Docker Configuration
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  web:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DEBUG=True
-      - DATABASE_URL=postgresql://user:pass@db:5432/weather247
-    depends_on:
-      - db
-      - redis
-  
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_DB=weather247
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-  
-  redis:
-    image: redis:6.4
-    ports:
-      - "6379:6379"
+#### 10.3.2 Local Services Configuration
+```bash
+# PostgreSQL Configuration
+# Edit /etc/postgresql/15/main/postgresql.conf
+# Set listen_addresses = 'localhost'
+# Set port = 5432
+
+# Redis Configuration
+# Edit /etc/redis/redis.conf
+# Set bind 127.0.0.1
+# Set port 6379
+
+# Start services
+sudo systemctl start postgresql
+sudo systemctl start redis
+
+# Enable services on boot
+sudo systemctl enable postgresql
+sudo systemctl enable redis
 ```
 
 ### 10.4 Troubleshooting Checklist

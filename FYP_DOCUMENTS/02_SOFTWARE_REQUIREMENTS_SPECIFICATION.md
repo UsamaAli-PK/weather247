@@ -76,7 +76,7 @@ Weather247 is a standalone web application that integrates multiple weather data
 - **Developers**: API consumers integrating with the system
 
 ### 2.4 Operating Environment
-- **Development**: Local development environment with Docker
+- **Development**: Local development environment with Python and Node.js
 - **Testing**: Staging environment with local development
 - **Production**: Cloud-based deployment (AWS/Google Cloud)
 
