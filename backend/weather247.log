@@ -403,3 +403,4 @@ INFO 2025-08-16 07:15:29,546 basehttp 6489 140233752434368 "GET /django-admin/ H
 INFO 2025-08-16 07:15:29,878 basehttp 6489 140233752434368 "GET /django-admin/login/?next=/django-admin/ HTTP/1.1" 200 4206
 WARNING 2025-08-16 07:15:42,382 log 6489 140233752434368 Forbidden (Origin checking failed - https://3a90096d4cae.ngrok-free.app does not match any trusted origins.): /django-admin/login/
 WARNING 2025-08-16 07:15:42,383 basehttp 6489 140233752434368 "POST /django-admin/login/?next=/django-admin/ HTTP/1.1" 403 2583
+INFO 2025-08-16 07:18:42,550 autoreload 13605 139917939204352 Watching for file changes with StatReloader
