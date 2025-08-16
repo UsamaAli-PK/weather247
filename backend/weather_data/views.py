@@ -63,7 +63,7 @@ def get_current_weather(request, city_id):
             return Response(serializer.data)
         
         # Fetch new data from API
-        weather_data = weather_manager.openweather.get_current_weather(
+        weather_data = weather_manager.get_current_weather_with_fallback(
             city.name, city.country
         )
         
@@ -149,7 +149,7 @@ def get_forecast(request, city_id):
         days = int(request.GET.get('days', 5))
         
         # Get forecast data
-        forecasts = weather_manager.openweather.get_forecast(
+        forecasts = weather_manager.primary_service.get_forecast(
             city.name, city.country, days
         )
         
@@ -176,9 +176,9 @@ def get_air_quality(request, city_id):
         
         if not air_quality:
             # Fetch new data
-            air_quality = weather_manager.openweather.get_air_quality(
-                city.latitude, city.longitude
-            )
+                    air_quality = weather_manager.primary_service.get_air_quality(
+            city.latitude, city.longitude
+        )
         
         if air_quality:
             serializer = AirQualityDataSerializer(air_quality)
